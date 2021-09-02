@@ -1,0 +1,42 @@
+version: "3.7"
+services:
+  idefend-test-nginx:
+    image: nginx:1.17.3-alpine
+    container_name: idefend-test-nginx
+    ports:
+      - 80
+    volumes:
+      - ./..:/srv:cached
+      - ./nginx/config/default.conf:/etc/nginx/conf.d/default.conf
+    links:
+      - idefend-test-php
+    networks:
+      default:
+        aliases:
+          - idefendv.test
+  idefend-test-php:
+    build:
+      context: ./php/build
+    container_name: idefend-test-php
+    environment:
+      COMPOSER_MEMORY_LIMIT: ${COMPOSER_MEMORY_LIMIT}
+      COMPOSER_PROCESS_TIMEOUT: ${COMPOSER_PROCESS_TIMEOUT}
+      HOST_USER_ID: ${HOST_USER_ID}
+    working_dir: /srv/app
+    volumes:
+      - ~/.ssh:/home/user/.ssh
+      - ./..:/srv:cached
+      - ./php/config/php.ini:/usr/local/etc/php/php.ini
+      - ./php/config/php-fpm.conf:/usr/local/etc/php-fpm.d/zzz-docker.conf
+    links:
+      - idefend-test-mysql
+  idefend-test-mysql:
+    image: mysql:8.0.17
+    container_name: idefend-test-mysql
+    ports:
+      - 3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./mysql/data:/var/lib/mysql:cached
+      - ./mysql/config/custom.cnf:/etc/mysql/conf.d/zz-custom.cnf
